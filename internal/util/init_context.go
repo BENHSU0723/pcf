@@ -33,8 +33,11 @@ func InitpcfContext(context *context.PCFContext) {
 	sbi := configuration.Sbi
 	context.NrfUri = configuration.NrfUri
 	context.UriScheme = ""
-	context.RegisterIPv4 = factory.PcfSbiDefaultIPv4 // default localhost
-	context.SBIPort = factory.PcfSbiDefaultPort      // default port
+	context.RegisterIPv4 = factory.PcfSbiDefaultIPv4                        // default localhost
+	context.SBIPort = factory.PcfSbiDefaultPort                             // default port
+	context.DefaultDNN = configuration.DefaultURSP.Dnn                      //default URSP: DNN
+	context.DefaultSNSSAI = models.Snssai(configuration.DefaultURSP.SNssai) //default URSP: S-NSSAI
+	context.T3501Cfg = configuration.T3501
 	if sbi != nil {
 		if sbi.Scheme != "" {
 			context.UriScheme = models.UriScheme(sbi.Scheme)

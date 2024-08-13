@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/BENHSU0723/nas_public/uePolicyContainer"
+	ben_model "github.com/BENHSU0723/openapi_public/models"
 	"github.com/free5gc/openapi/models"
 	"github.com/free5gc/pcf/internal/logger"
 	"github.com/free5gc/util/idgenerator"
@@ -26,6 +28,7 @@ type UeContext struct {
 	UdrUri string
 	// SMPolicy
 	SmPolicyData map[string]*UeSmPolicyData // use smPolicyId(ue.Supi-pduSessionId) as key
+	UePolicyData map[string]*UeUePolicyData // use UepolicyId as key
 	// App Session Related
 	// AppSessionIDGenerator uint64
 	AppSessionIDGenerator *idgenerator.IDGenerator
@@ -33,9 +36,13 @@ type UeContext struct {
 	AfRoutReq *models.AfRoutingRequirement
 	AspId     string
 	// Policy Decision
-	AppSessionIdStore           *AppSessionIdStore
-	PolicyDataSubscriptionStore *models.PolicyDataSubscription
-	PolicyDataChangeStore       *models.PolicyDataChangeNotification
+	AppSessionIdStore               *AppSessionIdStore
+	PolicyDataSubscriptionStore     *models.PolicyDataSubscription
+	PolicyDataChangeStore           *models.PolicyDataChangeNotification
+	SubscriptionID                  string
+	N1N2InfoSubscriptionCreatedData *models.UeN1N2InfoSubscriptionCreatedData
+	// T3501 for UE policy delivery service
+	T3501 *Timer
 
 	// ChargingRatingGroup
 	RatingGroupData map[string][]int32 // use smPolicyId(ue.Supi-pduSessionId) as key
@@ -102,6 +109,27 @@ type UeSmPolicyData struct {
 	SubscriptionID         string
 }
 
+type UeUePolicyData struct {
+	PTI        uint8
+	UepolicyId string
+	// UePolicyContainer include PTI and msg tpye and multiple UPSI info(PLMN/UPSC)
+	UePolicyContainer *uePolicyContainer.UePolicyContainer
+	// this IE record the content of [UePolicyContainer], include the UPSC
+	UePolicyContainerListContent uePolicyContainer.UEPolicySectionManagementListContent
+	UrspRuleSet                  ben_model.UePolicyURSP
+
+	UePolicySet             *ben_model.UePolicySet // Subscription Data
+	Guami                   *models.Guami          //Globally Unique AMF Identifier
+	SubscribePolicyID       string                 //subcribe to UDR policy data ID
+	SubscribeSubscriptionID string                 //subcribe to UDR subscription data ID
+	Supi                    string
+	NotificationUri         string
+	SuppFeat                string
+	Rfsp                    int32
+	// Snssai          models.Snssai
+	PcfUe *UeContext
+}
+
 // NewUeAMPolicyData returns created UeAMPolicyData data and insert this data to Ue.AMPolicyData with assolId as key
 func (ue *UeContext) NewUeAMPolicyData(assolId string, req models.PolicyAssociationRequest) *UeAMPolicyData {
 	ue.Gpsi = req.Gpsi
@@ -164,6 +192,20 @@ func (ue *UeContext) NewUeSmPolicyData(
 	data.PcfUe = ue
 	ue.SmPolicyData[key] = &data
 	data.InfluenceDataToPccRule = make(map[string]string)
+	return &data
+}
+
+// TODO: modify UEpolicy data init element
+func (ue *UeContext) NewUePolicyData(UepolicyId string, req models.PolicyAssociationRequest) *UeUePolicyData {
+	data := UeUePolicyData{}
+	data.Guami = req.Guami
+	data.Supi = req.Supi
+	data.NotificationUri = req.NotificationUri
+	data.UepolicyId = UepolicyId
+	data.SuppFeat = req.SuppFeat
+	data.PcfUe = ue
+	ue.UePolicyData[UepolicyId] = &data
+
 	return &data
 }
 
@@ -518,4 +560,14 @@ func ConvertBitRateToKbps(bitRate string) (kBitRate float64, err error) {
 // Convert bitRate from float64 to String
 func ConvertBitRateToString(kBitRate float64) (bitRate string) {
 	return fmt.Sprintf("%f Kbps", kBitRate)
+}
+
+func (ue *UeContext) StopT3501() {
+	if ue.T3501 == nil {
+		return
+	}
+
+	logger.CtxLog.Infof("Stop T3501 timer")
+	ue.T3501.Stop()
+	ue.T3501 = nil // clear the timer
 }

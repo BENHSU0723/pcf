@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	ben_Nudr "github.com/BENHSU0723/openapi_public/Nudr_DataRepository"
 	"github.com/free5gc/openapi/Namf_Communication"
 	"github.com/free5gc/openapi/Nbsf_Management"
 	"github.com/free5gc/openapi/Npcf_AMPolicy"
@@ -77,6 +78,13 @@ func GetNudrClient(uri string) *Nudr_DataRepository.APIClient {
 	configuration := Nudr_DataRepository.NewConfiguration()
 	configuration.SetBasePath(uri)
 	client := Nudr_DataRepository.NewAPIClient(configuration)
+	return client
+}
+
+func GetBenNudrClient(uri string) *ben_Nudr.APIClient {
+	configuration := ben_Nudr.NewConfiguration()
+	configuration.SetBasePath(uri)
+	client := ben_Nudr.NewAPIClient(configuration)
 	return client
 }
 
@@ -215,6 +223,7 @@ var serviceUriMap = map[models.ServiceName]string{
 	models.ServiceName_NPCF_SMPOLICYCONTROL:     "sm-policies",
 	models.ServiceName_NPCF_BDTPOLICYCONTROL:    "bdtpolicies",
 	models.ServiceName_NPCF_POLICYAUTHORIZATION: "app-sessions",
+	models.ServiceName_NPCF_UE_POLICY_CONTROL:   "ue-policies",
 }
 
 // Get Resource Uri (location Header) with param id string

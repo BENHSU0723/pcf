@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/asaskevich/govalidator"
 
+	ben_models "github.com/BENHSU0723/openapi_public/models"
 	"github.com/free5gc/pcf/internal/logger"
 )
 
@@ -30,7 +32,7 @@ const (
 	PcfSMpolicyCtlResUriPrefix  = "/npcf-smpolicycontrol/v1"
 	PcfBdtPolicyCtlResUriPrefix = "/npcf-bdtpolicycontrol/v1"
 	PcfOamResUriPrefix          = "/npcf-oam/v1"
-	PcfUePolicyCtlResUriPrefix  = "/npcf-ue-policy-control/v1/"
+	PcfUePolicyCtlResUriPrefix  = "/npcf-ue-policy-control/v1"
 )
 
 type Config struct {
@@ -57,15 +59,17 @@ type Info struct {
 }
 
 type Configuration struct {
-	PcfName         string    `yaml:"pcfName,omitempty" valid:"required, type(string)"`
-	Sbi             *Sbi      `yaml:"sbi,omitempty" valid:"required"`
-	TimeFormat      string    `yaml:"timeFormat,omitempty" valid:"required"`
-	DefaultBdtRefId string    `yaml:"defaultBdtRefId,omitempty" valid:"required, type(string)"`
-	NrfUri          string    `yaml:"nrfUri,omitempty" valid:"required, url"`
-	NrfCertPem      string    `yaml:"nrfCertPem,omitempty" valid:"optional"`
-	ServiceList     []Service `yaml:"serviceList,omitempty" valid:"required"`
-	Mongodb         *Mongodb  `yaml:"mongodb" valid:"required"`
-	Locality        string    `yaml:"locality,omitempty" valid:"-"`
+	PcfName         string                        `yaml:"pcfName,omitempty" valid:"required, type(string)"`
+	Sbi             *Sbi                          `yaml:"sbi,omitempty" valid:"required"`
+	TimeFormat      string                        `yaml:"timeFormat,omitempty" valid:"required"`
+	DefaultBdtRefId string                        `yaml:"defaultBdtRefId,omitempty" valid:"required, type(string)"`
+	NrfUri          string                        `yaml:"nrfUri,omitempty" valid:"required, url"`
+	NrfCertPem      string                        `yaml:"nrfCertPem,omitempty" valid:"optional"`
+	ServiceList     []Service                     `yaml:"serviceList,omitempty" valid:"required"`
+	Mongodb         *Mongodb                      `yaml:"mongodb" valid:"required"`
+	Locality        string                        `yaml:"locality,omitempty" valid:"-"`
+	DefaultURSP     ben_models.Model5GvnGroupData `yaml:"defaulURSP,omitempty" valid:"required"`
+	T3501           TimerValue                    `yaml:"t3501,omitempty" valid:"required"`
 }
 
 type Logger struct {
@@ -83,6 +87,10 @@ func (c *Configuration) validate() (bool, error) {
 
 	if result := govalidator.IsTime(c.TimeFormat, PcfTimeFormatLayout); !result {
 		err := fmt.Errorf("Invalid TimeFormat: %s, should be in 2019-01-02 15:04:05 format.", c.TimeFormat)
+		return false, err
+	}
+
+	if _, err := c.T3501.validate(); err != nil {
 		return false, err
 	}
 
@@ -309,4 +317,18 @@ func (c *Config) GetLogReportCaller() bool {
 		return false
 	}
 	return c.Logger.ReportCaller
+}
+
+type TimerValue struct {
+	Enable        bool          `yaml:"enable" valid:"type(bool)"`
+	ExpireTime    time.Duration `yaml:"expireTime" valid:"type(time.Duration)"`
+	MaxRetryTimes int           `yaml:"maxRetryTimes,omitempty" valid:"type(int)"`
+}
+
+func (t *TimerValue) validate() (bool, error) {
+	if _, err := govalidator.ValidateStruct(t); err != nil {
+		return false, appendInvalid(err)
+	}
+
+	return true, nil
 }

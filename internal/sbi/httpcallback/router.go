@@ -78,4 +78,18 @@ var routes = Routes{
 		"/amfstatus",
 		HTTPAmfStatusChangeNotify,
 	},
+
+	{
+		"HTTPUdrSubscriptionDataChangeNotify",
+		strings.ToUpper("Post"),
+		"/nudr-notify/subscription-data/:supi",
+		HTTPUdrSubscriptionDataChangeNotify,
+	},
+
+	{
+		"HTTPAmfUePolicyDeliveryNotify",
+		strings.ToUpper("Post"),
+		"namf-notify/ue-policy-data/:supi",
+		HTTPAmfUePolicyDeliveryNotify,
+	},
 }

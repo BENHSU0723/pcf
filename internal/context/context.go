@@ -46,6 +46,10 @@ type PCFContext struct {
 	// AMF Status Change Subscription related
 	AMFStatusSubsData sync.Map // map[string]AMFStatusSubscriptionData; subscriptionID as key
 
+	// PTI(Procedure transaction identity) is responsible for monitor procedure
+	// 3GPP TS 24.007 V18.1.0 (2023-12),section-11.2.3.1a &  TS 124 501 V17.7.1,section-9.6
+	PTIGenerator *idgenerator.IDGenerator
+
 	// lock
 	DefaultUdrURILock sync.RWMutex
 
@@ -53,6 +57,13 @@ type PCFContext struct {
 	RatingGroupIdGenerator *idgenerator.IDGenerator
 
 	OAuth2Required bool
+
+	//default USRP :DNN and S-NSSAI
+	DefaultDNN    string
+	DefaultSNSSAI models.Snssai
+
+	// T3501 for MANAGE UE POLICY COMMAND message
+	T3501Cfg factory.TimerValue
 }
 
 type AMFStatusSubscriptionData struct {
@@ -157,6 +168,7 @@ func Init() {
 	pcfContext.PcfSuppFeats = make(map[models.ServiceName]openapi.SupportedFeature)
 	pcfContext.BdtPolicyIDGenerator = idgenerator.NewGenerator(1, math.MaxInt64)
 	pcfContext.RatingGroupIdGenerator = idgenerator.NewGenerator(1, math.MaxInt64)
+	pcfContext.PTIGenerator = idgenerator.NewGenerator(128, 254)
 	InitpcfContext(&pcfContext)
 }
 
@@ -174,14 +186,16 @@ func GetUri(name models.ServiceName) string {
 }
 
 var (
-	PolicyAuthorizationUri       = factory.PcfPolicyAuthResUriPrefix + "/app-sessions/"
-	SmUri                        = factory.PcfSMpolicyCtlResUriPrefix
-	IPv4Address                  = "192.168."
-	IPv6Address                  = "ffab::"
-	PolicyDataChangeNotifyUri    = factory.PcfCallbackResUriPrefix + "/nudr-notify/policy-data"
-	InfluenceDataUpdateNotifyUri = factory.PcfCallbackResUriPrefix + "/nudr-notify/influence-data"
-	Ipv4_pool                    = make(map[string]string)
-	Ipv6_pool                    = make(map[string]string)
+	PolicyAuthorizationUri          = factory.PcfPolicyAuthResUriPrefix + "/app-sessions/"
+	SmUri                           = factory.PcfSMpolicyCtlResUriPrefix
+	IPv4Address                     = "192.168."
+	IPv6Address                     = "ffab::"
+	PolicyDataChangeNotifyUri       = factory.PcfCallbackResUriPrefix + "/nudr-notify/policy-data"
+	InfluenceDataUpdateNotifyUri    = factory.PcfCallbackResUriPrefix + "/nudr-notify/influence-data"
+	SubscriptionDataChangeNotifyUri = "/npcf-callback/v1/nudr-notify/subscription-data"
+	N1UePolicyDataNotifyUri         = "/npcf-callback/v1/namf-notify/ue-policy-data"
+	Ipv4_pool                       = make(map[string]string)
+	Ipv6_pool                       = make(map[string]string)
 )
 
 // BdtPolicy default value
@@ -227,6 +241,7 @@ func (c *PCFContext) NewPCFUe(Supi string) (*UeContext, error) {
 		newUeContext := &UeContext{}
 		newUeContext.SmPolicyData = make(map[string]*UeSmPolicyData)
 		newUeContext.AMPolicyData = make(map[string]*UeAMPolicyData)
+		newUeContext.UePolicyData = make(map[string]*UeUePolicyData)
 		newUeContext.PolAssociationIDGenerator = 1
 		newUeContext.AppSessionIDGenerator = idgenerator.NewGenerator(1, math.MaxInt64)
 		newUeContext.Supi = Supi
@@ -256,6 +271,17 @@ func (c *PCFContext) PCFUeFindByPolicyId(PolicyId string) *UeContext {
 		return nil
 	}
 	supi := PolicyId[:index]
+	if supi != "" {
+		if value, ok := c.UePool.Load(supi); ok {
+			ueContext := value.(*UeContext)
+			return ueContext
+		}
+	}
+	return nil
+}
+
+// Find PcfUe which the supi belongs to
+func (c *PCFContext) PCFUeFindBySUPI(supi string) *UeContext {
 	if supi != "" {
 		if value, ok := c.UePool.Load(supi); ok {
 			ueContext := value.(*UeContext)
