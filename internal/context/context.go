@@ -113,8 +113,11 @@ func InitpcfContext(context *PCFContext) {
 	context.NrfUri = configuration.NrfUri
 	context.NrfCertPem = configuration.NrfCertPem
 	context.UriScheme = ""
-	context.RegisterIPv4 = factory.PcfSbiDefaultIPv4 // default localhost
-	context.SBIPort = factory.PcfSbiDefaultPort      // default port
+	context.RegisterIPv4 = factory.PcfSbiDefaultIPv4         // default localhost
+	context.SBIPort = factory.PcfSbiDefaultPort              // default port
+	context.DefaultDNN = configuration.DefaultURSP.Dnn       //default URSP: DNN
+	context.DefaultSNSSAI = configuration.DefaultURSP.Snssai //default URSP: S-NSSAI
+	logger.UtilLog.Warnf("PCF config - ursp, dnn:%v, snssai:%v\n", context.DefaultDNN, context.DefaultSNSSAI)
 	if sbi != nil {
 		if sbi.Scheme != "" {
 			context.UriScheme = models.UriScheme(sbi.Scheme)

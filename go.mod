@@ -6,6 +6,7 @@ toolchain go1.22.4
 
 require (
 	github.com/BENHSU0723/nas_public v0.0.0-20240813100008-f54ab16178b8
+	github.com/BENHSU0723/openapi_public v0.0.0-20240718060556-814b9f82e803
 	github.com/antihax/optional v1.0.0
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/cydev/zero v0.0.0-20160322155811-4a4535dd56e7
@@ -23,7 +24,6 @@ require (
 )
 
 require (
-	github.com/BENHSU0723/openapi_public v0.0.0-20240718060556-814b9f82e803 // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect

@@ -1,14 +1,13 @@
 package producer
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/BENHSU0723/nas_public/uePolicyContainer"
+	"github.com/BENHSU0723/openapi_public/Nudr_DataRepository"
 	"github.com/antihax/optional"
-	"github.com/free5gc/openapi/Nudr_DataRepository"
 	"github.com/free5gc/openapi/models"
 	pcf_context "github.com/free5gc/pcf/internal/context"
 	"github.com/free5gc/pcf/internal/logger"
@@ -229,20 +228,27 @@ func AmfUePolicyDeliveryNotifyProcedure(supi string, n1msgNotify models.N1Messag
 func storeUePolicyToUdr(polAssId, supi string, uePolData pcf_context.UeUePolicyData, ue *pcf_context.UeContext) error {
 	if ue.UdrUri != "" {
 		logger.CallbackLog.Warnln("UdrUri: ", ue.UdrUri)
-		client := util.GetNudrClient(ue.UdrUri)
+		client := util.GetBenNudrClient(ue.UdrUri)
 		uePolSet, err := util.UePolicyContentToModelUePolicySection(uePolData.UePolicyContainerListContent, uePolData.UrspRuleSet)
 		if err != nil {
 			return err
 		}
 		logger.CallbackLog.Warnf("uePolSet: %+v\n", uePolSet)
 		StoredData := Nudr_DataRepository.PolicyDataUesUeIdUePolicySetPutParamOpts{UePolicySet: optional.NewInterface(*uePolSet)}
-		response, err := client.DefaultApi.PolicyDataUesUeIdUePolicySetPut(context.Background(), supi, &StoredData)
+		logger.CallbackLog.Warnf("StoredData to udr:%+v\n", StoredData)
+
+		ctx, _, err1 := pcf_context.GetSelf().GetTokenCtx(models.ServiceName_NUDR_DR, models.NfType_UDR)
+		if err1 != nil {
+			return err1
+		}
+
+		response, err := client.DefaultApi.PolicyDataUesUeIdUePolicySetPut(ctx, supi, &StoredData)
 		if err != nil {
-			if response.StatusCode == http.StatusNotFound {
+			if response != nil && (*response).StatusCode == http.StatusNotFound {
 				logger.CallbackLog.Warnf("Can't find UE[%s] UE Policy Data in UDR", ue.Supi)
 				return fmt.Errorf(" PCF can't find UE[%s] UE Policy Data in UDR", ue.Supi)
 			} else {
-				logger.CallbackLog.Errorf("PolicyDataUesUeIdUePolicySetGet: %+v", err.Error())
+				logger.CallbackLog.Errorf("PolicyDataUesUeIdUePolicySetPut: %+v", err.Error())
 				return fmt.Errorf("error happen when Send Put request To UDR:%v", err)
 			}
 		}

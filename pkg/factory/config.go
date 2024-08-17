@@ -12,7 +12,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 
-	ben_models "github.com/BENHSU0723/openapi_public/models"
+	"github.com/free5gc/openapi/models"
 	"github.com/free5gc/pcf/internal/logger"
 )
 
@@ -59,17 +59,22 @@ type Info struct {
 }
 
 type Configuration struct {
-	PcfName         string                        `yaml:"pcfName,omitempty" valid:"required, type(string)"`
-	Sbi             *Sbi                          `yaml:"sbi,omitempty" valid:"required"`
-	TimeFormat      string                        `yaml:"timeFormat,omitempty" valid:"required"`
-	DefaultBdtRefId string                        `yaml:"defaultBdtRefId,omitempty" valid:"required, type(string)"`
-	NrfUri          string                        `yaml:"nrfUri,omitempty" valid:"required, url"`
-	NrfCertPem      string                        `yaml:"nrfCertPem,omitempty" valid:"optional"`
-	ServiceList     []Service                     `yaml:"serviceList,omitempty" valid:"required"`
-	Mongodb         *Mongodb                      `yaml:"mongodb" valid:"required"`
-	Locality        string                        `yaml:"locality,omitempty" valid:"-"`
-	DefaultURSP     ben_models.Model5GvnGroupData `yaml:"defaulURSP,omitempty" valid:"required"`
-	T3501           TimerValue                    `yaml:"t3501,omitempty" valid:"required"`
+	PcfName         string      `yaml:"pcfName,omitempty" valid:"required, type(string)"`
+	Sbi             *Sbi        `yaml:"sbi,omitempty" valid:"required"`
+	TimeFormat      string      `yaml:"timeFormat,omitempty" valid:"required"`
+	DefaultBdtRefId string      `yaml:"defaultBdtRefId,omitempty" valid:"required, type(string)"`
+	NrfUri          string      `yaml:"nrfUri,omitempty" valid:"required, url"`
+	NrfCertPem      string      `yaml:"nrfCertPem,omitempty" valid:"optional"`
+	ServiceList     []Service   `yaml:"serviceList,omitempty" valid:"required"`
+	Mongodb         *Mongodb    `yaml:"mongodb" valid:"required"`
+	Locality        string      `yaml:"locality,omitempty" valid:"-"`
+	DefaultURSP     defaultURSP `yaml:"defaultURSP,omitempty" valid:"required"`
+	T3501           TimerValue  `yaml:"t3501,omitempty" valid:"required"`
+}
+
+type defaultURSP struct {
+	Dnn    string        `yaml:"dnn,omitempty" valid:"required"`
+	Snssai models.Snssai `yaml:"snssai,omitempty" valid:"required"`
 }
 
 type Logger struct {

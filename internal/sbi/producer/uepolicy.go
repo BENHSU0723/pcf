@@ -13,7 +13,6 @@ import (
 
 	"github.com/BENHSU0723/nas_public/uePolicyContainer"
 	ben_models "github.com/BENHSU0723/openapi_public/models"
-	"github.com/free5gc/openapi"
 	"github.com/free5gc/openapi/models"
 	pcf_context "github.com/free5gc/pcf/internal/context"
 	"github.com/free5gc/pcf/internal/logger"
@@ -236,22 +235,23 @@ func CreateUePolicyProcedure(polAssoId string,
 	}
 
 	// TODO: add support feature
-	var requestSuppFeat openapi.SupportedFeature
-	if suppFeat, err := openapi.NewSupportedFeature(policyAssociationRequest.SuppFeat); err != nil {
-		logger.UEpolicylog.Warnln(err)
-	} else {
-		requestSuppFeat = suppFeat
-	}
-	uePolicy.SuppFeat = pcfSelf.PcfSuppFeats[models.
-		ServiceName_NPCF_UE_POLICY_CONTROL].NegotiateWith(
-		requestSuppFeat).String()
-	if uePolicy.Rfsp != 0 {
-		response.Rfsp = uePolicy.Rfsp
-	}
-	response.SuppFeat = uePolicy.SuppFeat
-	if len(response.SuppFeat) == 0 {
-		response.SuppFeat = "5GLAN-service"
-	}
+	// var requestSuppFeat openapi.SupportedFeature
+	// if suppFeat, err := openapi.NewSupportedFeature(policyAssociationRequest.SuppFeat); err != nil {
+	// 	logger.UEpolicylog.Errorln("ue policy NewSupportedFeature err:", err.Error())
+	// } else {
+	// 	requestSuppFeat = suppFeat
+	// }
+	// logger.UEpolicylog.Warnln("policyAssociationRequest.SuppFeat:", policyAssociationRequest.SuppFeat)
+	// uePolicy.SuppFeat = pcfSelf.PcfSuppFeats[models.
+	// 	ServiceName_NPCF_UE_POLICY_CONTROL].NegotiateWith(
+	// 	requestSuppFeat).String()
+	// if uePolicy.Rfsp != 0 {
+	// 	response.Rfsp = uePolicy.Rfsp
+	// }
+	// response.SuppFeat = uePolicy.SuppFeat
+	// if len(response.SuppFeat) == 0 {
+	// 	response.SuppFeat = "5GLAN-service"
+	// }
 
 	// for the successfull case, the (V-)(H-)PCF shall send a HTTP "201 Created" response with the URI for the created resource in the "Location" header field
 	// 3GPP TS 29.525 V17.9.0 (2022-12)-page.16
@@ -406,6 +406,7 @@ func BuildURSPrule_Default() (*ben_models.URSPrule, error) {
 		{ // component2: DNN-Internet
 			var defaultRouDescComp2 ben_models.RouteSelectionComponent
 			defaultRouDescComp2.Identifier.SetTypeId(ben_models.Route_DNN_type)
+			logger.UEpolicylog.Warnln("BuildURSPrule_Default: dnn-", pcf_context.GetSelf().DefaultDNN)
 			byteDNN := defaultRouDescComp2.MakeByte_DNN(pcf_context.GetSelf().DefaultDNN)
 			if err := defaultRouDescComp2.SetValue(byteDNN); err != nil {
 				return nil, err
@@ -494,6 +495,7 @@ func BuildURSPrule_VnGroup(precd uint8, vnGroupCfg ben_models.Model5GvnGroupConf
 			// component2: DNN
 			var rouDescComp2 ben_models.RouteSelectionComponent
 			rouDescComp2.Identifier.SetTypeId(ben_models.Route_DNN_type)
+			logger.UEpolicylog.Warnln("BuildURSPrule_VnGroup: dnn-", vnGroupCfg.Var5gVnGroupData.Dnn)
 			byteDNN := rouDescComp2.MakeByte_DNN(vnGroupCfg.Var5gVnGroupData.Dnn)
 			if err := rouDescComp2.SetValue(byteDNN); err != nil {
 				return nil, err
